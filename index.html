@@ -1,25 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Google</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Dice</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  #dice {
+    width: 200px;
+    height: 200px;
+    background: white;
+    border-radius: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 15px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.3);
+  }
+  .dot {
+    width: 25px;
+    height: 25px;
+    background: black;
+    border-radius: 50%;
+    justify-self: center;
+    align-self: center;
+    opacity: 0;
+  }
+</style>
 </head>
 <body>
-  <div class="google">
-    <h1 class="logo">Google</h1>
-    <div id="connect-section">
-      <input id="sessionCode" placeholder="Enter Code" />
-      <button onclick="joinSession()">OK</button>
-    </div>
-    <div id="connected-section" style="display:none;">
-      <div id="connected-status">Connected to Controller</div>
-      <div id="results"></div>
-    </div>
-  </div>
-  <script src="script.js"></script>
+<div id="dice">
+  <div class="dot" id="d1"></div>
+  <div class="dot" id="d2"></div>
+  <div class="dot" id="d3"></div>
+  <div class="dot" id="d4"></div>
+  <div class="dot" id="d5"></div>
+  <div class="dot" id="d6"></div>
+  <div class="dot" id="d7"></div>
+  <div class="dot" id="d8"></div>
+  <div class="dot" id="d9"></div>
+</div>
+
+<script>
+let fixedNumber = null;
+let dice = document.getElementById('dice');
+let dots = [...document.querySelectorAll('.dot')];
+
+// Dice dot patterns for 1-6
+const patterns = {
+  1: [4],
+  2: [0,8],
+  3: [0,4,8],
+  4: [0,2,6,8],
+  5: [0,2,4,6,8],
+  6: [0,2,3,5,6,8]
+};
+
+function showNumber(num){
+  dots.forEach(dot => dot.style.opacity = 0);
+  patterns[num].forEach(i => dots[i].style.opacity = 1);
+}
+
+function rollDice(randomize=true){
+  let num = randomize ? Math.floor(Math.random()*6)+1 : fixedNumber;
+  showNumber(num);
+}
+
+dice.addEventListener('click', ()=> rollDice(true));
+
+// Long press to set fixed number
+let pressTimer;
+dice.addEventListener('mousedown', ()=> {
+  pressTimer = setTimeout(()=> {
+    let chosen = prompt("Set fixed number (1-6):");
+    chosen = parseInt(chosen);
+    if(chosen >=1 && chosen <=6) fixedNumber = chosen;
+    alert("Fixed number set to "+fixedNumber);
+  },5000);
+});
+
+dice.addEventListener('mouseup', ()=> clearTimeout(pressTimer));
+dice.addEventListener('touchstart', ()=> {
+  pressTimer = setTimeout(()=> {
+    let chosen = prompt("Set fixed number (1-6):");
+    chosen = parseInt(chosen);
+    if(chosen >=1 && chosen <=6) fixedNumber = chosen;
+    alert("Fixed number set to "+fixedNumber);
+  },5000);
+});
+dice.addEventListener('touchend', ()=> clearTimeout(pressTimer));
+
+// Volume button listener (works only on Android with special packages / Web APIs limited)
+window.addEventListener('keydown', (e)=>{
+  if(e.key === "VolumeUp" || e.key === "ArrowUp") rollDice(false);
+  if(e.key === "VolumeDown" || e.key === "ArrowDown") rollDice(false);
+});
+
+// Initial random number
+rollDice(true);
+</script>
 </body>
 </html>
