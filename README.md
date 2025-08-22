@@ -1,28 +1,40 @@
-# Magic Dice Web App
+# Magic Dice - Stage-Ready Mind Reading App
 
-**Description:**
-A full-screen, stage-ready, realistic dice web app. Works offline and supports Add to Home Screen. Features:
+**Magic Dice** एक **3D realistic dice web app** है, specially designed for **magicians** to perform **mind-reading illusions** on stage or in front of an audience.  
 
-- Black background with realistic white dice and dots.
-- Random dice roll on click/swipe.
-- Long press to set a fixed number (1–6).
-- Volume button triggers the fixed number roll.
-- Fully offline capable (PWA).
-- Add to Home Screen for immersive full-screen experience.
+---
 
-**How to Use:**
-1. Open `index.html` in a browser (preferably Chrome/Edge).
-2. Click or swipe the dice for random rolls.
-3. Long press the dice (5 seconds) to set a fixed number.
-4. Press volume buttons to trigger the fixed number.
-5. Add to Home Screen for full-screen experience.
+## Features
 
-**Offline Support:**
-The app caches all essential files using a service worker. Internet connection is not required after first load.
+1. **3D Dice with Geometric Dots**  
+   - No images required  
+   - Each face shows proper dots (1–6) using canvas textures
 
-**Files:**
-- `index.html` – Main HTML file
-- `manifest.json` – PWA configuration
-- `service-worker.js` – Offline caching
-- `service-worker-register.js` – Service worker registration
-- `icon.png` – App icon
+2. **Random Dice Rolls**  
+   - Dice rotates and lands on random numbers naturally  
+   - Physics-based smooth rotation with inertia
+
+3. **Fixed Number Logic**  
+   - **5-tap anywhere** → select fixed number (1–6)  
+   - **3-second press** → activate fixed number  
+   - Tiny magician-only indicator shows when fixed number is active
+
+4. **Gesture-Based Rotation**  
+   - Slide/drag the dice to rotate  
+   - Dice responds to user input realistically
+
+5. **Full Screen & Immersive**  
+   - Black background hides distractions  
+   - PWA ready: Add to Home Screen → full screen, URL bar hidden
+
+6. **Mobile Optimized**  
+   - Works smoothly on mobile devices  
+   - Touch gestures supported  
+
+---
+
+## Installation
+
+1. Clone or download the repository:
+```bash
+git clone https://github.com/yourusername/magic-dice.git
