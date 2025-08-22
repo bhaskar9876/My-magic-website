@@ -1,44 +1,27 @@
-// Firebase database reference
 const db = firebase.database();
+const FIXED_CODE = "9717";
 
-// Audience joins session
+// Predefined media database
+const mediaDatabase = {
+  "Kala Chashma": "https://www.youtube.com/embed/6Gv8t7tXJ5g",
+  "Amitabh Bachchan": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Amitabh_Bachchan_at_Priyanka_Chopra%27s_birthday.jpg",
+  "Shape of You": "https://www.youtube.com/embed/JGwWNGJdvx8"
+};
+
+// AUDIENCE SIDE
 function joinSession() {
-  const code = document.getElementById("sessionCode").value;
-  if(!code) return;
-  
+  const codeInput = document.getElementById("sessionCode").value;
+  if(codeInput !== FIXED_CODE) {
+    alert("Wrong code!");
+    return;
+  }
+
   document.getElementById("connect-section").style.display = "none";
   document.getElementById("connected-section").style.display = "block";
 
-  db.ref("sessions/" + code).on("value", snapshot => {
+  db.ref("sessions/" + FIXED_CODE).on("value", snapshot => {
     const data = snapshot.val();
     if(data && data.result) {
-      let html = `<div class="search-result">`;
-      html += `<h2>${data.result}</h2>`;
-      // If it's a YouTube link → embed
-      if(data.result.includes("youtube.com")) {
-        html += `<iframe width="300" height="200" src="${data.result.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>`;
-      }
-      html += `</div>`;
-      document.getElementById("results").innerHTML = html;
-    }
-  });
-}
-
-// Controller sends result
-function sendResult() {
-  const code = document.getElementById("sessionCode").value;
-  const text = document.getElementById("resultText").value;
-  if(!code || !text) return;
-  
-  db.ref("sessions/" + code).set({ result: text });
-}
-
-// Controller disconnects session
-function disconnectSession() {
-  const code = document.getElementById("sessionCode").value;
-  if(!code) return;
-  
-  db.ref("sessions/" + code).remove();
-  document.getElementById("resultText").value = "";
-  alert("Session disconnected");
-}
+      let html = `<div class="search-result"><h2>${data.result}</h2>`;
+      const url = mediaDatabase[data.result];
+      if(url
