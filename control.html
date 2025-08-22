@@ -9,11 +9,14 @@
   <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h2>Controller Panel</h2>
-  <input id="sessionCode" placeholder="Enter Fixed Code" /><br><br>
-  <input id="resultText" placeholder="Type Song / Actor / Movie" /><br><br>
-  <button onclick="sendResult()">OK</button>
-  <button onclick="disconnectSession()">Disconnect</button>
+  <div class="controller">
+    <h2>Controller Panel</h2>
+    <div id="session-indicator">Session Code: 9717</div>
+    <div id="connection-status" class="disconnected">Not connected</div>
+    <input id="resultText" placeholder="Type Song / Actor / Movie" /><br><br>
+    <button onclick="sendResult()">OK</button>
+    <button onclick="disconnectSession()">Disconnect</button>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
