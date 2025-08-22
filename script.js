@@ -51,5 +51,4 @@ function disconnectSession() {
   db.ref("sessions/" + FIXED_CODE).remove();
   document.getElementById("resultText").value = "";
   document.getElementById("connection-status").innerText = "Disconnected";
-  document.getElementById("connection-status").className = "disconnected";
-}
+  document
