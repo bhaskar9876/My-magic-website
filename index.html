@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Google</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
@@ -12,11 +11,14 @@
 <body>
   <div class="google">
     <h1 class="logo">Google</h1>
-    <input id="sessionCode" placeholder="Enter Code" />
-    <button onclick="joinSession()">Join</button>
-    <div id="results"></div>
+    <div id="connect-section">
+      <input id="sessionCode" placeholder="Enter Code" />
+      <button onclick="joinSession()">OK</button>
+    </div>
+    <div id="connected-section" style="display:none;">
+      <div id="results"></div>
+    </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
