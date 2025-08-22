@@ -1,2 +1,38 @@
 body {
-  font-family
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 80px;
+  background: white;
+}
+
+.logo {
+  font-size: 70px;
+  color: #4285F4;
+  font-weight: bold;
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  width: 250px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  background: #4285F4;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+#results {
+  margin-top: 30px;
+}
+
+.search-result h2 {
+  font-size: 24px;
+  margin: 10px 0;
+}
