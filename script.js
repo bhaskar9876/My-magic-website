@@ -24,4 +24,32 @@ function joinSession() {
     if(data && data.result) {
       let html = `<div class="search-result"><h2>${data.result}</h2>`;
       const url = mediaDatabase[data.result];
-      if(url
+      if(url) {
+        if(url.includes("youtube.com/embed")) {
+          html += `<iframe width="300" height="200" src="${url}" frameborder="0" allowfullscreen></iframe>`;
+        } else {
+          html += `<img src="${url}" width="300" />`;
+        }
+      }
+      html += `</div>`;
+      document.getElementById("results").innerHTML = html;
+    }
+  });
+}
+
+// CONTROLLER SIDE
+function sendResult() {
+  const text = document.getElementById("resultText").value;
+  if(!text) return;
+
+  db.ref("sessions/" + FIXED_CODE).set({ result: text });
+  document.getElementById("connection-status").innerText = "Audience Connected";
+  document.getElementById("connection-status").className = "connected";
+}
+
+function disconnectSession() {
+  db.ref("sessions/" + FIXED_CODE).remove();
+  document.getElementById("resultText").value = "";
+  document.getElementById("connection-status").innerText = "Disconnected";
+  document.getElementById("connection-status").className = "disconnected";
+}
