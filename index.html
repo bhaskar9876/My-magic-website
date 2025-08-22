@@ -6,107 +6,31 @@
 <title>Magic Dice</title>
 <link rel="manifest" href="manifest.json">
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    touch-action: manipulation;
-    user-select: none;
-  }
-  #dice {
-    width: 200px;
-    height: 200px;
-    background: white;
-    border-radius: 20px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 15px;
-    padding: 20px;
-    box-shadow: 0 0 20px rgba(255,255,255,0.3);
-  }
-  .dot {
-    width: 25px;
-    height: 25px;
-    background: black;
-    border-radius: 50%;
-    justify-self: center;
-    align-self: center;
-    opacity: 0;
-  }
+html, body {
+    margin:0; padding:0;
+    background:black;
+    overflow:hidden;
+    touch-action:none;
+    user-select:none;
+}
+#indicator {
+    position:absolute;
+    top:20px; right:20px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background-color: rgba(255,255,255,0.2); /* very light white */
+    display:none; /* visible only when fixed number active */
+    z-index: 10;
+}
 </style>
 </head>
 <body>
-<div id="dice">
-  <div class="dot" id="d1"></div>
-  <div class="dot" id="d2"></div>
-  <div class="dot" id="d3"></div>
-  <div class="dot" id="d4"></div>
-  <div class="dot" id="d5"></div>
-  <div class="dot" id="d6"></div>
-  <div class="dot" id="d7"></div>
-  <div class="dot" id="d8"></div>
-  <div class="dot" id="d9"></div>
-</div>
+<div id="indicator"></div>
 
-<script>
-let fixedNumber = null;
-let dice = document.getElementById('dice');
-let dots = [...document.querySelectorAll('.dot')];
+<!-- Three.js and Cannon.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"></script>
 
-// Dice dot patterns for 1-6
-const patterns = {
-  1: [4],
-  2: [0,8],
-  3: [0,4,8],
-  4: [0,2,6,8],
-  5: [0,2,4,6,8],
-  6: [0,2,3,5,6,8]
-};
-
-function showNumber(num){
-  dots.forEach(dot => dot.style.opacity = 0);
-  patterns[num].forEach(i => dots[i].style.opacity = 1);
-}
-
-function rollDice(randomize=true){
-  let num = randomize ? Math.floor(Math.random()*6)+1 : fixedNumber;
-  showNumber(num);
-}
-
-// Random roll on click
-dice.addEventListener('click', ()=> rollDice(true));
-
-// Long press to set fixed number
-let pressTimer;
-function startPressTimer(){
-  pressTimer = setTimeout(()=> {
-    let chosen = prompt("Set fixed number (1-6):");
-    chosen = parseInt(chosen);
-    if(chosen >=1 && chosen <=6) fixedNumber = chosen;
-    alert("Fixed number set to "+fixedNumber);
-  },5000);
-}
-dice.addEventListener('mousedown', startPressTimer);
-dice.addEventListener('touchstart', startPressTimer);
-
-dice.addEventListener('mouseup', ()=> clearTimeout(pressTimer));
-dice.addEventListener('mouseleave', ()=> clearTimeout(pressTimer));
-dice.addEventListener('touchend', ()=> clearTimeout(pressTimer));
-
-// Volume button trigger (works on some browsers)
-window.addEventListener('keydown', (e)=>{
-  if(e.key === "ArrowUp" || e.key === "VolumeUp") rollDice(false);
-  if(e.key === "ArrowDown" || e.key === "VolumeDown") rollDice(false);
-});
-
-// Initial random number
-rollDice(true);
-</script>
-<script src="service-worker-register.js"></script>
+<script src="diceApp.js"></script>
 </body>
 </html>
