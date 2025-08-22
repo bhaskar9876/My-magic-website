@@ -78,38 +78,35 @@ function rollDice(randomize=true){
   showNumber(num);
 }
 
+// Random roll on click
 dice.addEventListener('click', ()=> rollDice(true));
 
 // Long press to set fixed number
 let pressTimer;
-dice.addEventListener('mousedown', ()=> {
+function startPressTimer(){
   pressTimer = setTimeout(()=> {
     let chosen = prompt("Set fixed number (1-6):");
     chosen = parseInt(chosen);
     if(chosen >=1 && chosen <=6) fixedNumber = chosen;
     alert("Fixed number set to "+fixedNumber);
   },5000);
-});
+}
+dice.addEventListener('mousedown', startPressTimer);
+dice.addEventListener('touchstart', startPressTimer);
 
 dice.addEventListener('mouseup', ()=> clearTimeout(pressTimer));
-dice.addEventListener('touchstart', ()=> {
-  pressTimer = setTimeout(()=> {
-    let chosen = prompt("Set fixed number (1-6):");
-    chosen = parseInt(chosen);
-    if(chosen >=1 && chosen <=6) fixedNumber = chosen;
-    alert("Fixed number set to "+fixedNumber);
-  },5000);
-});
+dice.addEventListener('mouseleave', ()=> clearTimeout(pressTimer));
 dice.addEventListener('touchend', ()=> clearTimeout(pressTimer));
 
-// Volume button listener (works only on Android with special packages / Web APIs limited)
+// Volume button trigger (works on some browsers)
 window.addEventListener('keydown', (e)=>{
-  if(e.key === "VolumeUp" || e.key === "ArrowUp") rollDice(false);
-  if(e.key === "VolumeDown" || e.key === "ArrowDown") rollDice(false);
+  if(e.key === "ArrowUp" || e.key === "VolumeUp") rollDice(false);
+  if(e.key === "ArrowDown" || e.key === "VolumeDown") rollDice(false);
 });
 
 // Initial random number
 rollDice(true);
 </script>
+<script src="service-worker-register.js"></script>
 </body>
 </html>
