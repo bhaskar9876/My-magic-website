@@ -1,4 +1,3 @@
-// === Variables ===
 let scene, camera, renderer;
 let world, diceBody, diceMesh;
 let tapCount=0, tapTimeout, fixedNumber=null, fixedActive=false;
@@ -15,12 +14,10 @@ function createDiceMesh(){
         canvas.width = 256; canvas.height = 256;
         const ctx = canvas.getContext('2d');
 
-        // White face
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0,0,256,256);
         ctx.fillStyle = '#000000';
 
-        // Dot positions
         const dots = {
             1:[[128,128]],
             2:[[64,64],[192,192]],
@@ -40,7 +37,9 @@ function createDiceMesh(){
         faceMaterials.push(new THREE.MeshBasicMaterial({map:tex}));
     }
 
-    return new THREE.Mesh(geometry, faceMaterials);
+    const dice = new THREE.Mesh(geometry, faceMaterials);
+    dice.position.set(0,2,0); // initial height
+    return dice;
 }
 
 // === Initialize Three.js ===
