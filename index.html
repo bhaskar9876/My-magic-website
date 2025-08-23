@@ -1,159 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000"/>
   <title>Random Dice</title>
-  <meta name="theme-color" content="#000000" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  
-  <!-- ✅ Manifest inline -->
-  <link rel="manifest" href="data:application/manifest+json,{
-    &quot;name&quot;:%22Random%20Dice%22,
-    &quot;short_name&quot;:%22Dice%22,
-    &quot;start_url&quot;:%22.%2F%22,
-    &quot;display&quot;:%22standalone%22,
-    &quot;background_color&quot;:%22%23000000%22,
-    &quot;theme_color&quot;:%22%23000000%22,
-    &quot;icons&quot;:[
-      {&quot;src&quot;:%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAA... (192px icon base64) ...%22,&quot;sizes&quot;:%22192x192%22,&quot;type&quot;:%22image/png%22},
-      {&quot;src&quot;:%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAA... (512px icon base64) ...%22,&quot;sizes&quot;:%22512x512%22,&quot;type&quot;:%22image/png%22}
-    ]
-  }">
-
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
-    html, body { margin:0; padding:0; background:#000; height:100%; width:100%; overflow:hidden; }
-    #scene { position:fixed; inset:0; }
-    #hint, #armedDot, #tapCount {
-      position: fixed; z-index: 5; color: #999; font-family: system-ui, Arial, sans-serif;
-      user-select: none; -webkit-user-select: none; pointer-events:none;
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
     }
-    #hint { bottom: 8px; left: 8px; font-size: 12px; opacity:.35; }
-    #tapCount { top: 8px; right: 8px; font-size: 12px; opacity:.2; }
-    #armedDot {
-      top: 8px; left: 8px; width: 8px; height: 8px; background: #fff; border-radius: 50%;
-      display:none; opacity: .8;
+    canvas {
+      display: block;
     }
-    #chooser {
-      position: fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background: rgba(0,0,0,0.9); z-index: 10;
-    }
-    #chooser .panel {
-      background:#111; border:1px solid #222; border-radius:16px; padding:16px; color:#eee;
-      width: min(90vw, 360px); text-align:center;
-    }
-    #chooser h2 { margin: 0 0 8px; font-weight:600; }
-    #chooser p { margin: 0 0 12px; opacity:.8; font-size:14px; }
-    #chooser .grid {
-      display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
-    }
-    #chooser button {
-      background:#fff; color:#000; border:none; border-radius:12px; padding:10px 0; font-size:18px;
+    #dot {
+      position: fixed;
+      top: 6px;
+      right: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: white;
+      display: none;
+      z-index: 9999;
     }
   </style>
 </head>
 <body>
-  <canvas id="scene"></canvas>
-  <div id="hint">Slide to roll • Long-press 3s to arm • Tap screen 5× (when alone) to set</div>
-  <div id="tapCount"></div>
-  <div id="armedDot"></div>
-
-  <!-- Secret chooser -->
-  <div id="chooser" role="dialog" aria-modal="true">
-    <div class="panel">
-      <h2>Fix Number</h2>
-      <p>Select a number to force on the next armed roll.</p>
-      <div class="grid">
-        <button data-n="1">1</button>
-        <button data-n="2">2</button>
-        <button data-n="3">3</button>
-        <button data-n="4">4</button>
-        <button data-n="5">5</button>
-        <button data-n="6">6</button>
-      </div>
-    </div>
-  </div>
-
+  <div id="dot"></div>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(console.error);
-    }
-  </script>
+    const THREE = window.THREE;
 
-  <!-- ✅ Main logic (same as पहले वाला full features dice) -->
-  <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+    let scene, camera, renderer, dice, clock;
+    let forceNumber = null;
+    let forceArmed = false;
+    let longPressTimer;
+    const dot = document.getElementById("dot");
 
-    function makeFace(n, size=256) {
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0,0,size,size);
-      ctx.fillStyle = '#000';
-      const r = size*0.07;
-      const map = {
-        1: [[.5,.5]],
-        2: [[.3,.3],[.7,.7]],
-        3: [[.3,.3],[.5,.5],[.7,.7]],
-        4: [[.3,.3],[.3,.7],[.7,.3],[.7,.7]],
-        5: [[.3,.3],[.3,.7],[.5,.5],[.7,.3],[.7,.7]],
-        6: [[.3,.25],[.3,.5],[.3,.75],[.7,.25],[.7,.5],[.7,.75]]
-      }[n];
-      for (const [x,y] of map) {
-        ctx.beginPath();
-        ctx.arc(x*size, y*size, r, 0, Math.PI*2);
-        ctx.fill();
-      }
-      return new THREE.CanvasTexture(c);
-    }
-
-    const textures = [1,2,3,4,5,6].map(n => makeFace(n));
-    const canvas = document.getElementById('scene');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
-    camera.position.set(0, 0.8, 3);
-    scene.add(camera);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1.0));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(2,3,4); scene.add(dir);
-
-    const mats = [
-      new THREE.MeshStandardMaterial({ map: textures[0]}),
-      new THREE.MeshStandardMaterial({ map: textures[4]}),
-      new THREE.MeshStandardMaterial({ map: textures[0]}),
-      new THREE.MeshStandardMaterial({ map: textures[5]}),
-      new THREE.MeshStandardMaterial({ map: textures[1]}),
-      new THREE.MeshStandardMaterial({ map: textures[2]}),
-    ];
-    const dice = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), mats);
-    scene.add(dice);
-
-    function resize(){ renderer.setSize(innerWidth, innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
-    addEventListener('resize', resize); resize();
-
-    let angVel=new THREE.Vector3(0,0,0), q=new THREE.Quaternion(), rolling=false;
-    const armedDot=document.getElementById('armedDot'), tapCountEl=document.getElementById('tapCount');
-    function setArmed(on){ localStorage.setItem('armed', on?'1':'0'); armedDot.style.display=on?'block':'none'; if(on) setTimeout(()=>armedDot.style.display='none',1200); }
-    function getArmed(){ return localStorage.getItem('armed')==='1'; }
-    let tapCount=0, lastTap=0;
-    function tap(){ const now=performance.now(); if(now-lastTap>1500) tapCount=0; tapCount++; lastTap=now; tapCountEl.textContent=tapCount>=1?(tapCount+"/5"):""; if(tapCount>=5){tapCount=0; tapCountEl.textContent=""; chooser();} }
-    function chooser(){ const ch=document.getElementById('chooser'); ch.style.display='flex'; ch.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{ localStorage.setItem('forcedNumber',btn.dataset.n); ch.style.display='none'; }); }
-    function orient(n){ const e={1:new THREE.Euler(0,0,0),2:new THREE.Euler(0,0,Math.PI/2),3:new THREE.Euler(0,Math.PI,Math.PI/2),4:new THREE.Euler(Math.PI,0,0),5:new THREE.Euler(0,Math.PI,0),6:new THREE.Euler(Math.PI,0,Math.PI/2)}; dice.quaternion.setFromEuler(e[n]||e[1]); }
-    function roll(s=1){ rolling=true; angVel.set((Math.random()*2-1)*8*s,(Math.random()*2-1)*8*s,(Math.random()*2-1)*8*s); }
-    function maybeForce(){ if(!getArmed()) return false; const f=parseInt(localStorage.getItem('forcedNumber')||"0"); if(!f) return false; orient(f); setArmed(false); return true; }
-    function animate(){ requestAnimationFrame(animate); if(rolling||angVel.length()>0.001){ q.setFromAxisAngle(new THREE.Vector3(1,0,0), angVel.x*0.016); dice.quaternion.multiply(q); q.setFromAxisAngle(new THREE.Vector3(0,1,0), angVel.y*0.016); dice.quaternion.multiply(q); q.setFromAxisAngle(new THREE.Vector3(0,0,1), angVel.z*0.016); dice.quaternion.multiply(q); angVel.multiplyScalar(0.985); if(angVel.length()<0.15&&rolling){ if(maybeForce()) angVel.set(0,0,0); rolling=false;} } renderer.render(scene,camera); }
+    init();
     animate();
-    let down=false,lastX=0,lastY=0,timer=null;
-    canvas.addEventListener('pointerdown',e=>{lastX=e.clientX;lastY=e.clientY;down=true;tap();clearTimeout(timer);timer=setTimeout(()=>setArmed(true),3000);});
-    addEventListener('pointermove',e=>{if(!down) return;const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;const s=Math.min(2.5,Math.hypot(dx,dy)/120);if(s>0.05) roll(0.5+s);});
-    addEventListener('pointerup',()=>{down=false;clearTimeout(timer);});
-    orient(1);
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({antialias:true});
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Light
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(5, 5, 5);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+      // Dice geometry
+      const geometry = new THREE.BoxGeometry(2,2,2);
+      const loader = new THREE.TextureLoader();
+      const materials = [
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/1.png")}),
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/2.png")}),
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/3.png")}),
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/4.png")}),
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/5.png")}),
+        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/6.png")}),
+      ];
+      dice = new THREE.Mesh(geometry, materials);
+      scene.add(dice);
+
+      camera.position.z = 5;
+      clock = new THREE.Clock();
+
+      // Event listeners
+      window.addEventListener("resize", onWindowResize);
+      document.body.addEventListener("touchstart", handleTouchStart);
+      document.body.addEventListener("touchend", handleTouchEnd);
+      document.body.addEventListener("mousedown", handleTouchStart);
+      document.body.addEventListener("mouseup", handleTouchEnd);
+
+      // Secret tap detection
+      let tapCount = 0;
+      document.body.addEventListener("click", ()=>{
+        tapCount++;
+        if(tapCount>=5){
+          tapCount=0;
+          chooseForceNumber();
+        }
+        setTimeout(()=>{ tapCount=0; },1000);
+      });
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function handleTouchStart(e){
+      longPressTimer = setTimeout(()=>{
+        forceArmed = true;
+        dot.style.display="block";
+        setTimeout(()=>{ dot.style.display="none"; },1200);
+      },3000);
+    }
+    function handleTouchEnd(e){
+      clearTimeout(longPressTimer);
+      rollDice();
+    }
+
+    function rollDice(){
+      if(forceArmed && forceNumber){
+        // force outcome
+        setDiceRotation(forceNumber);
+        forceArmed = false;
+      }else{
+        // random roll
+        const num = Math.floor(Math.random()*6)+1;
+        setDiceRotation(num);
+      }
+    }
+
+    function setDiceRotation(num){
+      let x=0,y=0;
+      switch(num){
+        case 1: x=0; y=0; break;
+        case 2: x=Math.PI/2; y=0; break;
+        case 3: x=0; y=-Math.PI/2; break;
+        case 4: x=0; y=Math.PI/2; break;
+        case 5: x=-Math.PI/2; y=0; break;
+        case 6: x=Math.PI; y=0; break;
+      }
+      dice.rotation.set(x,y,0);
+    }
+
+    function animate(){
+      requestAnimationFrame(animate);
+      renderer.render(scene,camera);
+    }
+
+    function chooseForceNumber(){
+      const choice = prompt("Fix number (1-6)?");
+      if(choice>=1 && choice<=6){
+        forceNumber = parseInt(choice);
+        localStorage.setItem("forceNumber", forceNumber);
+        alert("Fixed number saved: "+forceNumber);
+      }
+    }
+
+    // load saved
+    forceNumber = parseInt(localStorage.getItem("forceNumber")||"null");
   </script>
 </body>
 </html>
