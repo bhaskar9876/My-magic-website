@@ -2,6 +2,7 @@ const CACHE_NAME = "random-dice-v1";
 const urlsToCache = [
   "/",
   "/index.html",
+  "/dice.js",
   "/manifest.webmanifest"
 ];
 
