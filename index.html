@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#000000"/>
   <title>Random Dice</title>
   <link rel="manifest" href="manifest.webmanifest" />
@@ -14,15 +14,11 @@
       touch-action: none;
       user-select: none;
     }
-    canvas {
-      display: block;
-    }
+    canvas { display: block; }
     #dot {
       position: fixed;
-      top: 6px;
-      right: 6px;
-      width: 10px;
-      height: 10px;
+      top: 6px; right: 6px;
+      width: 10px; height: 10px;
       border-radius: 50%;
       background: white;
       display: none;
@@ -32,127 +28,10 @@
 </head>
 <body>
   <div id="dot"></div>
+
+  <!-- Three.js -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script>
-    const THREE = window.THREE;
-
-    let scene, camera, renderer, dice, clock;
-    let forceNumber = null;
-    let forceArmed = false;
-    let longPressTimer;
-    const dot = document.getElementById("dot");
-
-    init();
-    animate();
-
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-      renderer = new THREE.WebGLRenderer({antialias:true});
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
-
-      // Light
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(5, 5, 5);
-      scene.add(light);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-
-      // Dice geometry
-      const geometry = new THREE.BoxGeometry(2,2,2);
-      const loader = new THREE.TextureLoader();
-      const materials = [
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/1.png")}),
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/2.png")}),
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/3.png")}),
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/4.png")}),
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/5.png")}),
-        new THREE.MeshPhongMaterial({map: loader.load("https://i.imgur.com/6.png")}),
-      ];
-      dice = new THREE.Mesh(geometry, materials);
-      scene.add(dice);
-
-      camera.position.z = 5;
-      clock = new THREE.Clock();
-
-      // Event listeners
-      window.addEventListener("resize", onWindowResize);
-      document.body.addEventListener("touchstart", handleTouchStart);
-      document.body.addEventListener("touchend", handleTouchEnd);
-      document.body.addEventListener("mousedown", handleTouchStart);
-      document.body.addEventListener("mouseup", handleTouchEnd);
-
-      // Secret tap detection
-      let tapCount = 0;
-      document.body.addEventListener("click", ()=>{
-        tapCount++;
-        if(tapCount>=5){
-          tapCount=0;
-          chooseForceNumber();
-        }
-        setTimeout(()=>{ tapCount=0; },1000);
-      });
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    function handleTouchStart(e){
-      longPressTimer = setTimeout(()=>{
-        forceArmed = true;
-        dot.style.display="block";
-        setTimeout(()=>{ dot.style.display="none"; },1200);
-      },3000);
-    }
-    function handleTouchEnd(e){
-      clearTimeout(longPressTimer);
-      rollDice();
-    }
-
-    function rollDice(){
-      if(forceArmed && forceNumber){
-        // force outcome
-        setDiceRotation(forceNumber);
-        forceArmed = false;
-      }else{
-        // random roll
-        const num = Math.floor(Math.random()*6)+1;
-        setDiceRotation(num);
-      }
-    }
-
-    function setDiceRotation(num){
-      let x=0,y=0;
-      switch(num){
-        case 1: x=0; y=0; break;
-        case 2: x=Math.PI/2; y=0; break;
-        case 3: x=0; y=-Math.PI/2; break;
-        case 4: x=0; y=Math.PI/2; break;
-        case 5: x=-Math.PI/2; y=0; break;
-        case 6: x=Math.PI; y=0; break;
-      }
-      dice.rotation.set(x,y,0);
-    }
-
-    function animate(){
-      requestAnimationFrame(animate);
-      renderer.render(scene,camera);
-    }
-
-    function chooseForceNumber(){
-      const choice = prompt("Fix number (1-6)?");
-      if(choice>=1 && choice<=6){
-        forceNumber = parseInt(choice);
-        localStorage.setItem("forceNumber", forceNumber);
-        alert("Fixed number saved: "+forceNumber);
-      }
-    }
-
-    // load saved
-    forceNumber = parseInt(localStorage.getItem("forceNumber")||"null");
-  </script>
+  <!-- Dice logic -->
+  <script src="dice.js"></script>
 </body>
 </html>
