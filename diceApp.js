@@ -4,7 +4,7 @@ let tapCount=0, tapTimeout, fixedNumber=null, fixedActive=false;
 let pressTimer;
 let isDragging=false, previousX=0;
 
-// === Create dice mesh with geometric dots ===
+// === Dice Mesh ===
 function createDiceMesh(){
     const geometry = new THREE.BoxGeometry(1,1,1);
     const faceMaterials = [];
@@ -13,7 +13,6 @@ function createDiceMesh(){
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 256;
         const ctx = canvas.getContext('2d');
-
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0,0,256,256);
         ctx.fillStyle = '#000000';
@@ -38,22 +37,23 @@ function createDiceMesh(){
     }
 
     const dice = new THREE.Mesh(geometry, faceMaterials);
-    dice.position.set(0,2,0); // initial height
+    dice.position.set(0,1,0);
     return dice;
 }
 
-// === Initialize Three.js ===
-function initThree() {
+// === Three.js Init ===
+function initThree(){
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0,3,5);
+    camera.position.set(0,3,7);
+    camera.lookAt(0,0,0);
 
     renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff,1);
-    scene.add(ambient);
+    const light = new THREE.AmbientLight(0xffffff,1);
+    scene.add(light);
 
     diceMesh = createDiceMesh();
     scene.add(diceMesh);
@@ -61,48 +61,50 @@ function initThree() {
     animate();
 }
 
-// === Initialize Physics ===
-function initPhysics() {
+// === Physics Init ===
+function initPhysics(){
     world = new CANNON.World();
-    world.gravity.set(0, -9.82, 0);
+    world.gravity.set(0,-9.82,0);
     world.broadphase = new CANNON.NaiveBroadphase();
     world.solver.iterations = 10;
 
     const shape = new CANNON.Box(new CANNON.Vec3(0.5,0.5,0.5));
-    diceBody = new CANNON.Body({ mass:1, shape:shape, position:new CANNON.Vec3(0,2,0), angularDamping:0.1 });
+    diceBody = new CANNON.Body({mass:1, shape:shape, position:new CANNON.Vec3(0,1,0), angularDamping:0.1});
     world.addBody(diceBody);
 
     const ground = new CANNON.Body({mass:0});
-    const groundShape = new CANNON.Plane();
-    ground.addShape(groundShape);
-    ground.position.y= -1;
+    ground.addShape(new CANNON.Plane());
+    ground.quaternion.setFromEuler(-Math.PI/2,0,0);
+    ground.position.y = 0;
     world.addBody(ground);
 }
 
-// === Animate Loop ===
+// === Animate ===
 function animate(){
     requestAnimationFrame(animate);
     world.step(1/60);
     diceMesh.position.copy(diceBody.position);
     diceMesh.quaternion.copy(diceBody.quaternion);
     renderer.render(scene, camera);
+    detectResult();
 }
 
-// === Dice Roll ===
-function rollDice() {
+// === Roll Dice ===
+function rollDice(){
     if(fixedActive && fixedNumber){
         const rot = getRotationForNumber(fixedNumber);
+        diceBody.position.set(0,1,0);
+        diceBody.velocity.set(0,2,0);
+        diceBody.angularVelocity.set(0,1,0);
         diceBody.quaternion.setFromEuler(rot.x, rot.y, rot.z);
-        diceBody.velocity.set(0,0,0);
-        diceBody.angularVelocity.set(0,0,0);
     } else {
-        diceBody.position.set(0,2,0);
+        diceBody.position.set(0,1,0);
         diceBody.velocity.set((Math.random()-0.5)*5,5,(Math.random()-0.5)*5);
         diceBody.angularVelocity.set((Math.random()-0.5)*10,(Math.random()-0.5)*10,(Math.random()-0.5)*10);
     }
 }
 
-// === Number to Rotation ===
+// === Fixed number rotations ===
 function getRotationForNumber(num){
     const mapping = {
         1:{x:0, y:0, z:0},
@@ -115,30 +117,30 @@ function getRotationForNumber(num){
     return mapping[num];
 }
 
-// === 5-Tap Fix Number ===
-document.body.addEventListener('click', ()=>{
+// === 5-tap to set number ===
+document.body.addEventListener('click',()=>{
     tapCount++;
     clearTimeout(tapTimeout);
-    tapTimeout = setTimeout(()=>{tapCount=0},1000);
+    tapTimeout=setTimeout(()=>{tapCount=0},1000);
     if(tapCount===5){
         tapCount=0;
-        let num = prompt("Select fixed number 1-6");
+        let num=prompt("Enter fixed number 1-6");
         if(num>=1 && num<=6) fixedNumber=parseInt(num);
         alert("Fixed number set!");
     }
 });
 
-// === 3-sec Press Activate Fixed ===
-document.body.addEventListener('mousedown', ()=>{
-    pressTimer = setTimeout(()=>{
+// === 3-sec press ===
+document.body.addEventListener('mousedown',()=>{
+    pressTimer=setTimeout(()=>{
         fixedActive=true;
         document.getElementById('indicator').style.display='block';
         rollDice();
     },3000);
 });
-document.body.addEventListener('mouseup', ()=>{clearTimeout(pressTimer);});
+document.body.addEventListener('mouseup',()=>{clearTimeout(pressTimer);});
 
-// === Drag Rotation ===
+// === Drag rotation ===
 document.body.addEventListener('mousedown',(e)=>{isDragging=true; previousX=e.clientX;});
 document.body.addEventListener('mouseup',()=>{isDragging=false;});
 document.body.addEventListener('mousemove',(e)=>{
@@ -149,14 +151,41 @@ document.body.addEventListener('mousemove',(e)=>{
     }
 });
 
-// === Resize Handling ===
-window.addEventListener('resize', ()=>{
-    camera.aspect = window.innerWidth/window.innerHeight;
+// === Detect dice result ===
+let lastResult=null;
+function detectResult(){
+    if(diceBody.velocity.length()<0.1 && diceBody.angularVelocity.length()<0.1){
+        const upVec = new CANNON.Vec3(0,1,0);
+        let maxDot=-1, result=1;
+        const faceNormals = [
+            new CANNON.Vec3(0,0,1),   // 1
+            new CANNON.Vec3(0,0,-1),  // 2
+            new CANNON.Vec3(1,0,0),   // 3
+            new CANNON.Vec3(-1,0,0),  // 4
+            new CANNON.Vec3(0,1,0),   // 5
+            new CANNON.Vec3(0,-1,0)   // 6
+        ];
+        for(let i=0;i<6;i++){
+            const worldNormal = diceBody.quaternion.vmult(faceNormals[i]);
+            const dot = worldNormal.dot(upVec);
+            if(dot>maxDot){maxDot=dot; result=i+1;}
+        }
+        if(result!==lastResult){
+            lastResult=result;
+            console.log("Dice Result:",result);
+            // Optional: trigger callback here
+        }
+    }
+}
+
+// === Resize ===
+window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// === Init App ===
+// === Init ===
 initThree();
 initPhysics();
 rollDice();
